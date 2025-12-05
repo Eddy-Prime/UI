@@ -226,9 +226,11 @@ const ChatPage: React.FC = () => {
     setInputValue('')
     setIsLoading(true)
 
-    const response = await ChatService.sendMessage(messages.map(message => ({ role: message.role, content: message.content })))
+
+    const response = await ChatService.sendMessage([...messages, userMessage].map(message => ({ role: message.role, content: message.content })))
     const responseData = await response.json();
-    const responseBody = responseData.message.content
+    console.log(responseData)
+    const responseBody = responseData.content
     console.log("response", responseBody)
 
     const assistantMessage: Message = {
