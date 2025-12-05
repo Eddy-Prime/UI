@@ -23,9 +23,9 @@ import { ProfileDropdown } from '../components/ProfileDropdown'
 import { Avatar, AvatarFallback, AvatarImage } from '../components/components/ui/avatar'
 import { Button } from '../components/components/ui/button'
 import { useToast } from '../components/hooks/use-toast'
+import ChatService from '@services/chatServices'
 
 interface Message {
-  id: string
   content: string
   role: 'user' | 'assistant'
   timestamp: Date
@@ -73,6 +73,9 @@ const getWelcomeMessage = (): string => {
     return Math.random() > 0.5 ? "🌙 Moonlit chat?" : "✨ Burning the midnight oil?"
   }
 }
+
+
+
 
 // Mock response generator
 const generateMockResponse = (userMessage: string): string => {
@@ -214,7 +217,6 @@ const ChatPage: React.FC = () => {
     if (!inputValue.trim() || isLoading) return
 
     const userMessage: Message = {
-      id: Date.now().toString(),
       content: inputValue.trim(),
       role: 'user',
       timestamp: new Date()
@@ -224,18 +226,19 @@ const ChatPage: React.FC = () => {
     setInputValue('')
     setIsLoading(true)
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: generateMockResponse(userMessage.content),
-        role: 'assistant',
-        timestamp: new Date()
-      }
+    const response = await ChatService.sendMessage(messages.map(message => ({ role: message.role, content: message.content })))
+    const responseData = await response.json();
+    const responseBody = responseData.message.content
+    console.log("response", responseBody)
 
-      setMessages(prev => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1500)
+    const assistantMessage: Message = {
+      content: responseBody,
+      role: 'assistant',
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, assistantMessage])
+    setIsLoading(false)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -446,7 +449,7 @@ const ChatPage: React.FC = () => {
               /* Chat Messages */
               <div className="p-4 space-y-6">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                  <div className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
                     {message.role === 'assistant' && (
                       <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                         <Sparkles className="w-4 h-4 text-white" />
